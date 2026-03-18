@@ -1,0 +1,28 @@
+---
+title: "Web UI"
+description: "Built-in browser interface for chatting, building memory, and managing schemas."
+---
+
+The built-in web interface is served automatically when you run the API server:
+
+```bash
+cogos serve
+# Open http://localhost:8000 in your browser
+```
+
+## Features
+
+- **Chat interface** with real-time responses
+- **Build Memory modal** with two modes: **LLM Auto** and **From Template**
+- **Template field picker** with add/remove customization
+- **Schema auto-update** — configurable N-round interval with visual indicators
+- **Manual schema update** — one-click update from recent chat history
+- **Schema lifecycle** — create new schemas (with automatic backup), switch between saved schemas, restore from backups
+- **Multi-session schema sharing** — sessions share schemas by default; bind individual sessions to different schemas as needed
+- **Session history on switch** — chat history is automatically loaded and displayed when switching sessions
+- **Configurable context window** — set how many chat rounds the chatbot remembers, with auto memory injection when exceeded
+- **Config panel** — configure `context_rounds` and `schema_update_rounds` directly from the UI
+- **Schema inspector panel** — loaded directly from file, with field counts
+- **Session management** with context window indicator and schema ID
+- **Toast notifications** for schema updates and errors
+- **Dark theme**

@@ -1,0 +1,75 @@
+---
+title: "Schema Templates"
+description: "Use preset templates or create custom ones to bootstrap schema structures."
+---
+
+CogOS supports **two schema construction modes**:
+
+1. **LLM Auto-Generation** — The CM agent creates schema fields dynamically during `build()` (default)
+2. **Preset Templates** — Pre-defined field structures loaded from JSON files
+
+## Built-in Templates
+
+CogOS ships with a `user_profile` template covering 17 common fields across identity, work, preferences, personality, and goals.
+
+Run `cogos init` to export it as an editable JSON file:
+
+```bash
+cogos init
+# Generates templates/user_profile_template.json (editable copy)
+# Existing files are kept by default; use --force to overwrite
+```
+
+## Creating Custom Templates
+
+Create any `.json` file in the `./templates/` directory:
+
+```json
+{
+  "name": "medical_record",
+  "description": "Patient medical record",
+  "fields": [
+    {"path": "patient.name",          "default_value": "", "description": "Patient name"},
+    {"path": "diagnosis.current",     "default_value": "", "description": "Current diagnosis"},
+    {"path": "medication.current",    "default_value": "", "description": "Current medications"},
+    {"path": "medication.allergies",  "default_value": "", "description": "Drug allergies"}
+  ]
+}
+```
+
+The `name` field determines the template identifier. The file name can be anything.
+
+## Using Templates
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    # Start server with a template
+    cogos serve --template medical_record
+
+    # Build with a template
+    cogos build --template user_profile --input notes.md --session user1
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    cogos = CogOS(config).from_template("user_profile")
+    ```
+  </Tab>
+  <Tab title="YAML Config">
+    ```yaml
+    # configs/cogos.yaml: auto-load on startup
+    templates:
+      templates_dir: "./templates"
+      schema_template: "user_profile"
+    ```
+  </Tab>
+</Tabs>
+
+## Template Resolution
+
+Templates are loaded from `templates_dir` (default `./templates/`). User-defined templates override built-in ones with the same name.
+
+The resolution order:
+1. User templates in `templates_dir`
+2. Built-in templates bundled with CogOS

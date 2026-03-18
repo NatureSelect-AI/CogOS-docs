@@ -1,33 +1,282 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete REST API reference for CogOS."
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+The CogOS REST API is served by FastAPI. Start the server with:
 
-## Welcome
+```bash
+cogos serve --host 0.0.0.0 --port 8000
+```
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+Base URL: `http://localhost:8000`
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Core
 
-## Authentication
+### Build Memory
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+<ParamField body="text" type="string" required>
+  The text to process into memory.
+</ParamField>
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+
+```bash
+POST /api/build
+```
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "text": "I am Alice, I love hiking.",
+  "session_id": "alice"
+}
+```
+
+### Chat
+
+<ParamField body="message" type="string" required>
+  The user's message.
+</ParamField>
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+
+```bash
+POST /api/chat
+```
+
+```json
+{
+  "message": "What are my hobbies?",
+  "session_id": "alice"
+}
+```
+
+Response includes a `schema_updated` flag indicating if auto-update was triggered this round.
+
+### Update Schema from Chat
+
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+<ParamField body="rounds" type="integer">
+  Number of recent chat rounds to process.
+</ParamField>
+
+```bash
+POST /api/update-schema-from-chat
+```
+
+```json
+{
+  "session_id": "alice",
+  "rounds": 5
+}
+```
+
+## Configuration
+
+### Get Schema Update Rounds
+
+```bash
+GET /api/config/schema-update-rounds
+```
+
+### Set Schema Update Rounds
+
+```bash
+PUT /api/config/schema-update-rounds
+```
+
+```json
+{
+  "schema_update_rounds": 5
+}
+```
+
+### Get Chatbot Context Rounds
+
+```bash
+GET /api/config/chatbot-context-rounds
+```
+
+### Set Chatbot Context Rounds
+
+```bash
+PUT /api/config/chatbot-context-rounds
+```
+
+```json
+{
+  "context_rounds": 10
+}
+```
+
+## Schemas
+
+### List Schema Domains
+
+```bash
+GET /api/schemas
+```
+
+### Get Schema Details
+
+```bash
+GET /api/schemas/{name}
+```
+
+### Get Schema File Data
+
+```bash
+GET /api/schemas/file-data/{schema_id}
+```
+
+### Create Schema Domain
+
+```bash
+POST /api/schemas
+```
+
+### Create from Template
+
+```bash
+POST /api/schemas/from-template
+```
+
+### New Schema (Backup + Reset)
+
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+
+```bash
+POST /api/schemas/new
+```
+
+```json
+{
+  "session_id": "alice"
+}
+```
+
+Returns `backup_id` and `schema_id`.
+
+### Switch Schema
+
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+<ParamField body="target_schema_id" type="string" required>
+  The schema ID to switch to.
+</ParamField>
+
+```bash
+POST /api/schemas/switch
+```
+
+```json
+{
+  "session_id": "alice",
+  "target_schema_id": "default_20260312_143000"
+}
+```
+
+### Restore Schema
+
+<ParamField body="backup_id" type="string" required>
+  The backup identifier to restore.
+</ParamField>
+
+```bash
+POST /api/schemas/restore
+```
+
+```json
+{
+  "backup_id": "default_20260312_143000"
+}
+```
+
+### List Saved Schemas
+
+```bash
+GET /api/schemas/saved
+```
+
+### List Backups
+
+```bash
+GET /api/schemas/backups
+GET /api/schemas/backups?schema_id=default
+```
+
+## Templates
+
+### List Templates
+
+```bash
+GET /api/templates
+```
+
+### Get Template Details
+
+```bash
+GET /api/templates/{name}
+```
+
+## Sessions
+
+### List Sessions
+
+```bash
+GET /api/sessions
+```
+
+### Create Session
+
+<ParamField query="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+<ParamField query="schema_id" type="string">
+  The schema ID to bind to this session. Defaults to `"default"`.
+</ParamField>
+
+```bash
+POST /api/sessions?session_id=bob&schema_id=default
+```
+
+### Delete Session
+
+```bash
+DELETE /api/sessions/{id}
+```
+
+### Get Session History
+
+```bash
+GET /api/sessions/{id}/history
+```
+
+### Get Session Schema ID
+
+```bash
+GET /api/sessions/{id}/schema-id
+```
+
+### Set Session Schema ID
+
+<ParamField body="schema_id" type="string" required>
+  The schema ID to bind to this session.
+</ParamField>
+
+```bash
+PUT /api/sessions/{id}/schema-id
+```
+
+```json
+{
+  "schema_id": "default"
+}
 ```

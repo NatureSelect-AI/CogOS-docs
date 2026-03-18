@@ -1,0 +1,90 @@
+---
+title: "CLI"
+description: "Full command-line interface reference for the cogos command."
+---
+
+CogOS provides a full command-line interface via the `cogos` command.
+
+## Init
+
+Initialize the project — generates config and template files (run once):
+
+```bash
+cogos init
+
+# Re-generate all files, overwriting existing ones
+cogos init --force
+
+# Use a custom config filename
+cogos init -o configs/cogos_myproject.yaml
+```
+
+## Build
+
+Process text into structured memory:
+
+```bash
+# Build from a file
+cogos build --input conversation.md --session user1
+
+# Build with a preset template
+cogos build --template user_profile --text "I'm Bob" --session user1
+
+# Build from stdin
+cat notes.md | cogos build --session user1
+```
+
+## Chat
+
+Chat with memory-augmented responses:
+
+```bash
+# Single-shot chat
+cogos chat --message "What do I like?" --session user1
+
+# Interactive chat
+cogos chat --session user1
+```
+
+### Interactive Chat Commands
+
+When in interactive chat mode (`cogos chat`):
+
+| Command | Description |
+|---------|-------------|
+| `/build <text>` | Add memory inline |
+| `/schemas` | List registered schemas |
+| `quit` / `exit` | End the session |
+
+## Schemas
+
+Inspect registered schemas:
+
+```bash
+cogos schemas
+```
+
+## Serve
+
+Start the API server:
+
+```bash
+# Default settings
+cogos serve
+
+# Custom host and port
+cogos serve --host 0.0.0.0 --port 8000
+
+# With preset template
+cogos serve --port 8000 --template user_profile
+```
+
+## Summary
+
+| Command | Description |
+|---------|-------------|
+| `cogos init` | Initialize project (config + templates) |
+| `cogos build` | Process text into memory |
+| `cogos chat` | Chat with memory |
+| `cogos schemas` | Inspect schemas |
+| `cogos serve` | Start API server + Web UI |

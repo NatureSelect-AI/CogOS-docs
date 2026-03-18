@@ -1,0 +1,99 @@
+---
+title: "Two-Phase Workflow"
+description: "CogOS operates in two phases: build (update memory) and chat (respond with context)."
+---
+
+CogOS uses a **two-phase workflow** to separate memory management from response generation.
+
+```
+User Input
+    │
+    ▼
+┌─────────────────────────────────┐
+│  CM Agent (Cognitive Memory)     │ ← uses SCP tools to read/write schemas
+│  system_prompt_builder()         │
+└───────────────┬─────────────────┘
+                │
+       build phase          chat phase
+                │                │
+                ▼                ▼
+            [DONE]       ┌──────────────┐
+        (schema updated)  │   Chatbot    │ ← recalled schema as context
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                          Final Response
+```
+
+## Phase 1: Build
+
+The **build** phase processes input text and updates the schema. No chatbot response is generated.
+
+```python
+await cogos.build("""
+    [user]: I'm Bob, I love hiking and sushi.
+    [assistant]: Great taste, Bob!
+""", session_id="bob")
+```
+
+During build:
+1. The CM agent receives the input text
+2. It inspects the current schema structure
+3. It extracts relevant information and calls SCP operations (update, create)
+4. The schema is persisted to disk
+
+Use `build()` when you want to process information into memory without generating a response — for example, ingesting conversation history, documents, or notes.
+
+## Phase 2: Chat
+
+The **chat** phase recalls relevant schema data and generates a grounded response.
+
+```python
+reply = await cogos.chat("What food do I like?", session_id="bob")
+print(reply)  # "You mentioned that you love sushi!"
+```
+
+During chat:
+1. The CM agent recalls relevant schema fields based on the user's message
+2. The recalled data is injected into the chatbot's prompt
+3. The chatbot generates a response grounded in the structured memory
+
+## Dynamic Schema Update from Chat
+
+Instead of calling `build()` explicitly, CogOS can **automatically update schemas** during the chat flow.
+
+Configure `schema_update_rounds` to enable auto-updating:
+
+```python
+config = CogOSConfig.from_file()
+config.schema_update_rounds = 5  # update schema every 5 chat rounds
+
+cogos = (
+    CogOS(config)
+    .from_template("user_profile")
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+)
+
+# chat() returns a dict with reply and schema_updated flag
+result = await cogos.chat("I just got promoted to Senior Engineer!", session_id="bob")
+print(result["reply"])            # The chatbot response
+print(result["schema_updated"])   # True if schema was auto-updated this round
+```
+
+You can also trigger a manual update at any time:
+
+```python
+await cogos.update_schema_from_chat(session_id="bob", rounds=10)
+```
+
+## Context Window Management
+
+CogOS manages the chatbot's context window through `context_rounds`:
+
+- **`context_rounds = 10`** (default) — The chatbot sees the last 10 rounds of conversation
+- **`context_rounds = 0`** — Single-turn mode, no conversation history
+
+When the conversation exceeds `context_rounds`, schema memory is auto-injected into the user prompt to preserve context continuity.
+
+This approach keeps the context window lean while maintaining rich, structured memory through the schema system.

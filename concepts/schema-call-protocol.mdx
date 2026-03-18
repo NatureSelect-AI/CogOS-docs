@@ -1,0 +1,86 @@
+---
+title: "Schema Call Protocol"
+description: "How CogOS agents interact with structured memory through 4 standard operations."
+---
+
+The **Schema Call Protocol (SCP)** is the core abstraction that makes CogOS work. It treats agent memory as a **self-describing schema** — like a file system for cognition.
+
+## The Problem
+
+Long-running AI agents struggle with memory:
+
+- **Full conversation history** — context window overflow
+- **Unstructured summaries** — imprecise retrieval, lost details
+- **Vector databases** — no structured schema, hard to update specific facts
+
+## The Solution
+
+CogOS organizes memory into **typed, hierarchical fields** with descriptions:
+
+```
+user_profile.identity.name        → "Alice"    (User's full name)
+user_profile.preferences.hobbies  → "Hiking"   (Hobbies and interests)
+user_profile.work.role            → "Engineer"  (Job title)
+```
+
+Each field carries its own description. The CM agent uses **4 standard operations** to interact with memory:
+
+## Operations
+
+<ResponseField name="recall_schema" type="read">
+  Read data at specified schema paths. The CM agent uses this to retrieve relevant memory before generating a response.
+</ResponseField>
+
+<ResponseField name="update_schema" type="write">
+  Overwrite or append to an existing field. Used to update facts when new information is learned.
+</ResponseField>
+
+<ResponseField name="create_schema_field" type="write">
+  Create a new field at any path. Intermediate paths are auto-created. Used when the agent encounters information that doesn't fit existing fields.
+</ResponseField>
+
+<ResponseField name="register_schema" type="write">
+  Create a new empty schema domain. Used to organize memory into logical groups.
+</ResponseField>
+
+## Schema Domains
+
+Memory is organized into **domains** — top-level namespaces like `user_profile`, `medical_record`, or `project_context`. Each domain contains a tree of fields.
+
+```python
+from cogos import UniversalSchemaDomain
+
+user = UniversalSchemaDomain("user_profile")
+user.create_field("identity.name", "", "User's name")
+user.create_field("preferences.hobbies", "", "Hobbies and interests")
+user.create_field("work.role", "", "Job title")
+```
+
+## How the CM Agent Uses SCP
+
+During a `build()` call, the CM agent:
+
+1. Reads the user input
+2. Inspects the current schema structure
+3. Decides which fields to update or create
+4. Calls the appropriate SCP operations
+5. Repeats until no more updates are needed
+
+The agent is LLM-powered, meaning it uses frontier model reasoning to determine *what* information to extract and *where* to store it — capturing nuanced signals that rule-based systems miss.
+
+## Two Schema Modes
+
+<Tabs>
+  <Tab title="LLM Auto-Generation">
+    The CM agent creates schema fields dynamically during `build()`. No pre-defined structure needed — the agent decides what fields to create based on the input.
+
+    This is the default behavior and works well for general-purpose memory.
+  </Tab>
+  <Tab title="Preset Templates">
+    Pre-defined field structures loaded from JSON files. Templates provide a consistent schema structure across sessions.
+
+    Best for domain-specific use cases (medical records, customer profiles, etc.).
+
+    See [Schema Templates](/usage/schema-templates) for details.
+  </Tab>
+</Tabs>

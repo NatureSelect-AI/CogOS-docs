@@ -1,0 +1,146 @@
+---
+title: "OpenClaw Integration"
+description: "Use CogOS as a Context Engine in OpenClaw."
+---
+
+CogOS includes a first-party **OpenClaw plugin** (`cogos-openclaw-plugin/`) that integrates CogOS as a Context Engine, providing structured long-term memory for OpenClaw.
+
+## Quick Start
+
+```bash
+# 1. Start the CogOS backend
+cd CogOS
+pip install -e .
+export API_KEY="your-api-key"
+export MODEL="google/gemini-2.5-flash"
+export BASE_URL="https://openrouter.ai/api/v1"
+cogos serve
+
+# 2. Install and enable the plugin
+openclaw plugins install --link /path/to/CogOS/cogos-openclaw-plugin
+
+# 3. Start OpenClaw
+openclaw gateway
+```
+
+The plugin automatically extracts and recalls structured memories each turn.
+
+## Features
+
+- **Auto-extract** and **auto-recall** — extracts information into structured schemas and injects it into the system prompt each turn
+- **Schema-based memory** — organizes knowledge into typed domains and fields
+- **Multi-schema management** — create, switch, backup, and restore independent schema files
+- **Template system** — bootstrap schemas from built-in templates (`general`, `user_profile`, `roleplay`)
+- **Agent tools** — 5 registered tools for LLM-driven memory management
+- **Slash commands** — full `/cogos` command suite for manual memory management
+
+## Configuration
+
+Configure via environment variables or `openclaw.json`:
+
+| Option | Env Variable | Default | Description |
+|--------|-------------|---------|-------------|
+| `cogosBaseUrl` | `COGOS_BASE_URL` | `http://localhost:8000` | CogOS backend URL |
+| `sessionId` | `COGOS_SESSION_ID` | `default` | CogOS session ID |
+| `schemaId` | `COGOS_SCHEMA_ID` | `default` | Shared schema file ID |
+| `schemaTemplate` | `COGOS_SCHEMA_TEMPLATE` | — | Initial template |
+| `buildEveryNTurns` | `COGOS_BUILD_EVERY_N_TURNS` | `1` | Extraction frequency |
+
+Example `openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "cogos-claw": {
+        "enabled": true,
+        "config": {
+          "cogosBaseUrl": "http://localhost:8000",
+          "sessionId": "default",
+          "schemaId": "default",
+          "schemaTemplate": "general",
+          "buildEveryNTurns": 1
+        }
+      }
+    }
+  }
+}
+```
+
+## Slash Commands
+
+| Command | Description |
+|---------|-------------|
+| `/cogos` or `/cogos status` | Show connection status and schema overview |
+| `/cogos inspect` | View schema structure with field values |
+| `/cogos recall` | Recall all stored memory data |
+| `/cogos forget <domain>` | Delete a specific schema domain |
+| `/cogos forget --all` | Clear all memory |
+| `/cogos reset` | Backup current schema and start fresh |
+| `/cogos new [name]` | Create a new schema and switch to it |
+| `/cogos new name --template=user_profile` | Create from a template |
+| `/cogos switch <schema_id>` | Switch to an existing schema |
+| `/cogos restore <backup_id>` | Restore a schema from backup |
+| `/cogos templates` | List available schema templates |
+| `/cogos schemas` | List all schema files and backups |
+| `/cogos config` | View current runtime configuration |
+| `/cogos config buildEveryNTurns <N>` | Update extraction frequency |
+| `/cogos help` | Show help |
+
+## Agent Tools
+
+Five tools are registered for the OpenClaw agent:
+
+| Tool | Description |
+|------|-------------|
+| `cogos_inspect` | Inspect schema structure and field values |
+| `cogos_recall` | Recall all schema memory data |
+| `cogos_build` | Manually trigger information extraction |
+| `cogos_forget` | Delete a domain or clear all memory |
+| `cogos_update` | Trigger schema update from chat history |
+
+## Context Engine Lifecycle
+
+| OpenClaw Hook | Plugin Behavior | CogOS API |
+|---------------|-----------------|-----------|
+| `bootstrap` | Verify backend, create session, load template | `POST /api/sessions`, `GET /api/schemas/recall-all` |
+| `assemble` | Fetch schema data, inject into system prompt | `GET /api/schemas/recall-all` |
+| `afterTurn` | Format messages, extract info | `POST /api/build` |
+| `compact` | Delegate to runtime | — |
+
+## Data Flow
+
+```
+User message → OpenClaw agent
+                 ↓
+           [assemble] → GET /api/schemas/recall-all
+                 ↓        → schema data injected into system prompt
+           Model generates response
+                 ↓
+           [afterTurn] → POST /api/build
+                           → CM Agent extracts information
+                           → Updates schema
+                           → Available on next assemble
+```
+
+## Data Storage
+
+CogOS stores data under the OpenClaw Agent Workspace:
+
+```
+~/.openclaw/workspace/cogos/
+├── schemas/              # Schema files (shared across sessions)
+│   ├── default.json
+│   └── backups/
+│       └── default_20260314_180736.json
+└── sessions/
+    └── default.json
+```
+
+Configure paths in `configs/cogos.yaml`:
+
+```yaml
+persistence:
+  session_dir: "~/.openclaw/workspace/cogos/sessions"
+  schemas_dir: "~/.openclaw/workspace/cogos/schemas"
+```

@@ -1,0 +1,121 @@
+---
+title: "Python API"
+description: "Use CogOS programmatically in your Python applications."
+---
+
+## Basic Setup
+
+```python
+import asyncio
+from cogos import CogOS, CogOSConfig
+from cogos.prompts import default_cm_prompt, DEFAULT_CHATBOT_PROMPT
+
+config = CogOSConfig.from_file()  # auto-resolves config path
+```
+
+## Using a Preset Template
+
+The recommended way to get started:
+
+```python
+cogos = (
+    CogOS(config)
+    .from_template("user_profile")
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+)
+```
+
+## Defining Schema Manually
+
+For custom schema structures:
+
+```python
+from cogos import UniversalSchemaDomain
+
+user = UniversalSchemaDomain("user_profile")
+user.create_field("identity.name", "", "User's name")
+user.create_field("preferences.hobbies", "", "Hobbies and interests")
+
+cogos = (
+    CogOS(config)
+    .register(user)
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+)
+```
+
+## Build Memory
+
+Process any text into structured memory:
+
+```python
+asyncio.run(cogos.build("""
+    [user]: I'm Bob, I love hiking and sushi.
+    [assistant]: Great taste, Bob!
+""", session_id="bob"))
+```
+
+## Chat with Memory
+
+Generate responses grounded in schema data:
+
+```python
+reply = asyncio.run(cogos.chat("What food do I like?", session_id="bob"))
+print(reply)  # "You mentioned that you love sushi!"
+```
+
+## Dynamic Schema Update
+
+Enable automatic schema updates during chat:
+
+```python
+config = CogOSConfig.from_file()
+config.schema_update_rounds = 5  # update schema every 5 chat rounds
+
+cogos = (
+    CogOS(config)
+    .from_template("user_profile")
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+)
+
+# chat() returns a dict with reply and schema_updated flag
+result = asyncio.run(cogos.chat("I just got promoted to Senior Engineer!", session_id="bob"))
+print(result["reply"])            # The chatbot response
+print(result["schema_updated"])   # True if schema was auto-updated this round
+
+# Manual trigger
+asyncio.run(cogos.update_schema_from_chat(session_id="bob", rounds=10))
+```
+
+## Config Loading
+
+Multiple ways to load configuration:
+
+```python
+from cogos import CogOSConfig
+
+config = CogOSConfig.from_file()                      # auto-resolve + env vars
+config = CogOSConfig.from_file("configs/cogos.yaml")   # explicit path
+config = CogOSConfig.from_env()                        # env vars only
+config = CogOSConfig(model="gpt-4o")                   # direct construction
+```
+
+## Custom CM Prompt
+
+Override the default CM agent behavior:
+
+```python
+def my_cm_prompt(state, registry):
+    schema_overview = registry.inspect_all(max_depth=3)
+    return f"""You are a medical records agent.
+
+Available schemas:
+{schema_overview}
+
+Extract: diagnoses, medications, allergies, vitals.
+When done: {{"continue": false}}"""
+
+cogos = CogOS(config).cm_prompt(my_cm_prompt).chatbot_prompt(my_template)
+```

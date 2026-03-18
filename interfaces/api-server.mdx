@@ -1,0 +1,143 @@
+---
+title: "API Server"
+description: "REST API server powered by FastAPI for programmatic integration."
+---
+
+Start the REST API server:
+
+```bash
+cogos serve
+# or
+cogos serve --host 0.0.0.0 --port 8000
+```
+
+The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
+
+## Endpoints Overview
+
+### Core
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/build` | Process text into memory |
+| `POST` | `/api/chat` | Chat with memory (returns `schema_updated` flag) |
+| `POST` | `/api/update-schema-from-chat` | Manually update schema from recent chat rounds |
+
+### Configuration
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/config/schema-update-rounds` | Get current auto-update setting |
+| `PUT` | `/api/config/schema-update-rounds` | Change auto-update setting at runtime |
+| `GET` | `/api/config/chatbot-context-rounds` | Get chatbot context window size |
+| `PUT` | `/api/config/chatbot-context-rounds` | Change chatbot context window at runtime |
+
+### Schemas
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/schemas` | List schema domains |
+| `GET` | `/api/schemas/{name}` | Get schema details |
+| `GET` | `/api/schemas/file-data/{schema_id}` | Get full domain data from schema file |
+| `POST` | `/api/schemas` | Create a new schema domain |
+| `POST` | `/api/schemas/from-template` | Create schema from a template |
+| `POST` | `/api/schemas/new` | Backup current schema and start fresh |
+| `POST` | `/api/schemas/switch` | Switch session to a different schema |
+| `POST` | `/api/schemas/restore` | Restore a schema from backup |
+| `GET` | `/api/schemas/saved` | List all standalone schema files |
+| `GET` | `/api/schemas/backups` | List schema backups |
+
+### Templates
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/templates` | List available templates |
+| `GET` | `/api/templates/{name}` | Get template details |
+
+### Sessions
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/sessions` | List sessions (includes `schema_id`) |
+| `POST` | `/api/sessions` | Create session (with optional `schema_id`) |
+| `DELETE` | `/api/sessions/{id}` | Delete a session |
+| `GET` | `/api/sessions/{id}/history` | Get session chat history |
+| `GET` | `/api/sessions/{id}/schema-id` | Get session's bound schema ID |
+| `PUT` | `/api/sessions/{id}/schema-id` | Bind session to a different schema |
+
+## Usage Examples
+
+### Build Memory
+
+```bash
+curl -X POST http://localhost:8000/api/build \
+  -H "Content-Type: application/json" \
+  -d '{"text": "I am Alice, I love hiking.", "session_id": "alice"}'
+```
+
+### Chat
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What are my hobbies?", "session_id": "alice"}'
+```
+
+### Update Schema from Chat
+
+```bash
+curl -X POST http://localhost:8000/api/update-schema-from-chat \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "alice", "rounds": 5}'
+```
+
+### Runtime Config
+
+```bash
+# Get auto-update setting
+curl http://localhost:8000/api/config/schema-update-rounds
+
+# Set auto-update to every 5 rounds
+curl -X PUT http://localhost:8000/api/config/schema-update-rounds \
+  -H "Content-Type: application/json" \
+  -d '{"schema_update_rounds": 5}'
+```
+
+### Schema Lifecycle
+
+```bash
+# Backup + reset
+curl -X POST http://localhost:8000/api/schemas/new \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "alice"}'
+
+# List saved schemas and backups
+curl http://localhost:8000/api/schemas/saved
+curl http://localhost:8000/api/schemas/backups
+
+# Switch session to a backup
+curl -X POST http://localhost:8000/api/schemas/switch \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "alice", "target_schema_id": "default_20260312_143000"}'
+
+# Restore a backup
+curl -X POST http://localhost:8000/api/schemas/restore \
+  -H "Content-Type: application/json" \
+  -d '{"backup_id": "default_20260312_143000"}'
+```
+
+### Sessions
+
+```bash
+# Create a session with a specific schema
+curl -X POST "http://localhost:8000/api/sessions?session_id=bob&schema_id=default"
+
+# Get session history
+curl http://localhost:8000/api/sessions/alice/history
+
+# Check / change session schema
+curl http://localhost:8000/api/sessions/alice/schema-id
+curl -X PUT http://localhost:8000/api/sessions/alice/schema-id \
+  -H "Content-Type: application/json" \
+  -d '{"schema_id": "default"}'
+```

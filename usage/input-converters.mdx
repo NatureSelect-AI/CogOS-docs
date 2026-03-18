@@ -1,0 +1,69 @@
+---
+title: "Input Converters"
+description: "CogOS accepts various input formats through built-in converters."
+---
+
+CogOS can process multiple input formats, automatically converting them into text suitable for the CM agent.
+
+## Auto-Detection
+
+The simplest approach — `auto_convert()` handles format detection:
+
+```python
+from cogos.converters import auto_convert
+
+text = auto_convert(any_data)  # handles str, list[dict], dict, JSON strings
+```
+
+## Available Converters
+
+| Converter | Input Type | Description |
+|-----------|-----------|-------------|
+| `PlainTextConverter` | `str` | Pass-through with cleanup |
+| `MarkdownConverter` | `str` | Markdown content / files |
+| `ChatHistoryConverter` | `list[dict]` | OpenAI message format |
+| `RAGConverter` | `list[dict]` | RAG chunks with metadata |
+| `JSONConverter` | `dict / str` | Arbitrary JSON data |
+| `auto_convert()` | `any` | Auto-detects format |
+
+## Chat History
+
+Convert OpenAI-compatible message arrays:
+
+```python
+from cogos.converters import ChatHistoryConverter
+
+messages = [
+    {"role": "user", "content": "Hi, I'm Alice"},
+    {"role": "assistant", "content": "Hello Alice!"},
+]
+text = ChatHistoryConverter().convert(messages)
+```
+
+## RAG Chunks
+
+Convert retrieval-augmented generation chunks with metadata:
+
+```python
+from cogos.converters import RAGConverter
+
+chunks = [
+    {"text": "Important fact.", "metadata": {"source": "doc.md"}},
+]
+text = RAGConverter().convert(chunks)
+```
+
+## Custom Converters
+
+Subclass `InputConverter` and implement `convert()`:
+
+```python
+from cogos.converters import InputConverter
+
+class MyConverter(InputConverter):
+    def can_handle(self, data) -> bool:
+        return isinstance(data, MyCustomType)
+
+    def convert(self, data) -> str:
+        return str(data)
+```

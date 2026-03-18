@@ -1,0 +1,80 @@
+---
+title: "Shared Schemas & Multi-Session"
+description: "Share memory across sessions, create backups, and manage schema lifecycle."
+---
+
+By default, all sessions share the same schema (stored as a standalone file in `./schemas/`). This means memory built in one session is available across all sessions using the same schema.
+
+## Shared Memory
+
+```python
+# Two sessions share the default schema — memory is shared
+await cogos.build("I'm Alice, I work at OpenAI", session_id="session_a")
+reply = await cogos.chat("Where do I work?", session_id="session_b")
+# reply uses memory from session_a because both use schema_id="default"
+```
+
+## Create a New Schema (Backup + Reset)
+
+```python
+# Backup current schema and start fresh
+result = cogos.new_schema(session_id="session_a")
+print(result)  # {"backup_id": "default_20260312_143000", "schema_id": "default"}
+```
+
+## Switch a Session to a Different Schema
+
+```python
+# Use a previously backed-up schema
+cogos.switch_session_schema("session_b", "default_20260312_143000")
+
+# Check which schema a session uses
+schema_id = cogos.get_session_schema_id("session_a")  # "default"
+```
+
+## Separate Schemas per Session
+
+When creating a new session via the API, pass a different `schema_id` to isolate its memory:
+
+```bash
+curl -X POST "http://localhost:8000/api/sessions?session_id=bob&schema_id=bob_schema"
+```
+
+## Schema Lifecycle via API
+
+```bash
+# Backup current schema and start fresh
+curl -X POST http://localhost:8000/api/schemas/new \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "alice"}'
+
+# List saved schema files and backups
+curl http://localhost:8000/api/schemas/saved
+curl http://localhost:8000/api/schemas/backups
+
+# Switch a session to a different schema
+curl -X POST http://localhost:8000/api/schemas/switch \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "alice", "target_schema_id": "default_20260312_143000"}'
+
+# Restore a backup
+curl -X POST http://localhost:8000/api/schemas/restore \
+  -H "Content-Type: application/json" \
+  -d '{"backup_id": "default_20260312_143000"}'
+```
+
+## Storage Layout
+
+```
+schemas/
+├── default.json                      # Active schema file
+└── backups/
+    └── default_20260312_143000.json  # Timestamped backup
+```
+
+Configure the storage directory in `configs/cogos.yaml`:
+
+```yaml
+persistence:
+  schemas_dir: "./schemas"
+```

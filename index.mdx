@@ -1,97 +1,53 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "CogOS"
+description: "Cognitive Operating System for AI Agents — Structured, persistent memory for LLM-powered agents."
 ---
 
-## Setting up
+## What is CogOS?
 
-Get your documentation site up and running in minutes.
+CogOS is a **structured, persistent memory system** for LLM-powered agents. It enables agents to truly remember — without flooding the context window.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
+Through an agentic, schema-driven architecture, the **Cognitive Memory (CM) agent** uses frontier models to capture high-dimensional abstract signals about users that naive retrieval approaches miss entirely.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get CogOS up and running in minutes.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/concepts/architecture">
+    Understand how the system works end-to-end.
+  </Card>
+  <Card title="Python API" icon="python" href="/usage/python-api">
+    Use CogOS in your Python applications.
+  </Card>
+  <Card title="REST API" icon="server" href="/interfaces/api-server">
+    Integrate via the built-in HTTP server.
+  </Card>
+</CardGroup>
+
+## Key Results
+
+- **50% on PersonaMem v2 MCQ benchmark** — state-of-the-art among persistent memory systems
+- **70% reduction in conversation token consumption** on internal evaluation, with full contextual fidelity preserved
+- **Plug-and-play context reconstruction** — drop a user's schema into any new session and the model recovers a rich portrait of the user from the very first message
+
+## Core Idea: Schema Call Protocol (SCP)
+
+CogOS treats agent memory as a **self-describing schema** — like a file system for cognition:
+
+```
+user_profile.identity.name        → "Alice"    (User's full name)
+user_profile.preferences.hobbies  → "Hiking"   (Hobbies and interests)
+user_profile.work.role            → "Engineer"  (Job title)
+```
+
+Agents interact with memory through **4 standard operations**: `recall_schema`, `update_schema`, `create_schema_field`, and `register_schema`.
+
+<Card title="Learn more about SCP" icon="arrows-rotate" href="/concepts/schema-call-protocol">
+  Dive into the Schema Call Protocol architecture.
 </Card>
 
-## Make it yours
+## Vision: Cognition, Not Just Memory
 
-Design a docs site that looks great and empowers your users.
+Memory is a means, not the goal. CogOS aims to build a **complete cognitive map of the user** — one that captures not only what they explicitly say, but who they fundamentally are.
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+The next frontier is **hidden state modeling** — moving beyond what users say or do, toward understanding what they *mean* and *feel*. This is the path to AI companions and assistants with genuine emotional intelligence.

@@ -1,0 +1,91 @@
+---
+title: "Plugins"
+description: "Add hooks, prompt variables, and custom behavior without modifying core code."
+---
+
+CogOS supports optional plugins via `.use(...)`. Plugins add behavior without modifying core code.
+
+## Plugin Protocol
+
+A plugin is any Python class implementing optional methods (no base class required):
+
+| Hook | Triggered | Purpose |
+|------|-----------|---------|
+| `on_register(cogos)` | On `.use()` | Plugin initialization |
+| `before_build(state, registry)` | Before `build()` | Pre-processing |
+| `after_build(state, registry, result)` | After `build()` | Post-processing |
+| `before_chat(state, registry)` | Before `chat()` | Pre-processing |
+| `after_chat(state, registry, result, answer)` | After `chat()` | Post-processing |
+| `chat_prompt_vars(message, *, session_id, state, registry, recalled)` | During chatbot prompt generation | Inject custom prompt variables |
+
+Plugins use **best-effort isolation**: any plugin exception will never crash the core pipeline.
+
+## Registering Plugins
+
+```python
+cogos = (
+    CogOS(config)
+    .register(schema)
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+    .use(MyPlugin())
+)
+```
+
+## Example: External RAG Plugin
+
+A complete example that retrieves context from an external service and injects it into the chatbot prompt:
+
+```python
+import asyncio
+import json
+from urllib.request import Request, urlopen
+
+from cogos import CogOS, CogOSConfig, UniversalSchemaDomain
+from cogos.prompts import default_cm_prompt, DEFAULT_CHATBOT_PROMPT
+
+
+class ExternalRAGPlugin:
+    name = "external_rag"
+
+    def __init__(self, endpoint: str):
+        self.endpoint = endpoint.rstrip("/")
+
+    async def chat_prompt_vars(self, message, *, session_id, state, registry, recalled):
+        payload = json.dumps({"query": message, "session_id": session_id}).encode()
+        req = Request(
+            url=f"{self.endpoint}/retrieve",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        def _do():
+            with urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode())
+            return (data.get("context") or "").strip()
+
+        ctx = await asyncio.to_thread(_do)
+        if not ctx:
+            return {}
+        return {"rag_section": f"## Retrieved Context (RAG)\n{ctx}\n"}
+
+
+config = CogOSConfig.from_file()
+schema = UniversalSchemaDomain("user_profile")
+schema.create_field("identity.name", "", "User's name")
+
+cogos = (
+    CogOS(config)
+    .register(schema)
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)  # supports {rag_section}
+    .use(ExternalRAGPlugin("http://localhost:9000"))
+)
+```
+
+## Common Use Cases
+
+- **External RAG retrieval** — call your own service, inject retrieved context
+- **Logging / metrics** — track build and chat operations
+- **Safety filters / policy checks** — validate inputs and outputs
