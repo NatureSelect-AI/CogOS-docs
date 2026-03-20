@@ -10,34 +10,59 @@ CogOS supports **two schema construction modes**:
 
 ## Built-in Templates
 
-CogOS ships with a `user_profile` template covering 17 common fields across identity, work, preferences, personality, and goals.
+CogOS ships with two built-in templates:
 
-Run `cogos init` to export it as an editable JSON file:
+| Template | Domains | Description |
+|----------|---------|-------------|
+| `general` | `user_profile`, `user_interests`, `memory_events` | Long-term user memory for personalised AI assistants |
+| `roleplay` | `chatbot_settings`, `relationship_schema`, `user_schema` | Character and relationship tracking for roleplay scenarios |
+
+Run `cogos init` to export them as editable JSON files:
 
 ```bash
 cogos init
-# Generates templates/user_profile_template.json (editable copy)
+# Exports built-in templates to ./templates/ (editable copies)
 # Existing files are kept by default; use --force to overwrite
 ```
 
-## Creating Custom Templates
+## Template Sources & Priority
 
-Create any `.json` file in the `./templates/` directory:
+Templates are loaded from three sources, with later sources overriding earlier ones:
+
+| Priority | Source | Directory | Description |
+|----------|--------|-----------|-------------|
+| 1 (lowest) | Built-in | Bundled in code | `general` and `roleplay` |
+| 2 | User (shared) | `templates_dir` (`./templates/`) | Project-level templates, version-controlled |
+| 3 (highest) | Custom (personal) | `custom_templates_dir` (`./templates/custom/`) | Personal templates, git-ignored |
+
+If two templates share the same name, the higher-priority source wins.
+
+## Template File Format
+
+Templates use the same JSON format as schema files, with an optional `_meta` key:
 
 ```json
 {
-  "name": "medical_record",
-  "description": "Patient medical record",
-  "fields": [
-    {"path": "patient.name",          "default_value": "", "description": "Patient name"},
-    {"path": "diagnosis.current",     "default_value": "", "description": "Current diagnosis"},
-    {"path": "medication.current",    "default_value": "", "description": "Current medications"},
-    {"path": "medication.allergies",  "default_value": "", "description": "Drug allergies"}
-  ]
+  "_meta": {
+    "name": "medical_record",
+    "description": "Patient medical record schema"
+  },
+  "patient_info": {
+    "data": {
+      "meta": {
+        "domain": {"value": "patient_info", "description": "Schema domain: patient_info"}
+      },
+      "name": {"value": "", "description": "Patient full name"},
+      "diagnosis": {"value": "", "description": "Current diagnosis"},
+      "medications": {"value": "", "description": "Current medications"},
+      "allergies": {"value": "", "description": "Drug allergies"}
+    },
+    "_mutable": true
+  }
 }
 ```
 
-The `name` field determines the template identifier. The file name can be anything.
+The `_meta.name` field determines the template identifier. The file name can be anything ending in `.json`.
 
 ## Using Templates
 
@@ -45,15 +70,15 @@ The `name` field determines the template identifier. The file name can be anythi
   <Tab title="CLI">
     ```bash
     # Start server with a template
-    cogos serve --template medical_record
+    cogos serve --template general
 
     # Build with a template
-    cogos build --template user_profile --input notes.md --session user1
+    cogos build --template general --input notes.md --session user1
     ```
   </Tab>
   <Tab title="Python">
     ```python
-    cogos = CogOS(config).from_template("user_profile")
+    cogos = CogOS(config).from_template("general")
     ```
   </Tab>
   <Tab title="YAML Config">
@@ -61,15 +86,99 @@ The `name` field determines the template identifier. The file name can be anythi
     # configs/cogos.yaml: auto-load on startup
     templates:
       templates_dir: "./templates"
-      schema_template: "user_profile"
+      custom_templates_dir: "./templates/custom"
+      schema_template: "general"
+    ```
+  </Tab>
+  <Tab title="OpenClaw Slash Commands">
+    ```bash
+    # List all templates (grouped by source: builtin / user / custom)
+    /cogos templates
+
+    # Preview a template's domains and fields
+    /cogos templates show general
+
+    # Create a schema from template and switch to it
+    /cogos templates use general
+
+    # Create a named schema from template
+    /cogos new my_schema --template=general
     ```
   </Tab>
 </Tabs>
 
+## Creating Custom Templates
+
+### Via File
+
+Place any `.json` file in `./templates/` (shared) or `./templates/custom/` (personal):
+
+```bash
+# Shared template (version-controlled)
+templates/my_template.json
+
+# Personal template (git-ignored)
+templates/custom/my_private_template.json
+```
+
+### Via API
+
+Save a custom template through the REST API:
+
+```bash
+curl -X POST http://localhost:8000/api/templates/custom \
+  -H "Content-Type: application/json" \
+  -d @my_template.json
+```
+
+Delete a custom template:
+
+```bash
+curl -X DELETE http://localhost:8000/api/templates/custom/my_template
+```
+
+### Via OpenClaw Slash Command
+
+Create templates directly from the chat using the compact text format:
+
+```
+/cogos templates create game_character 游戏角色记忆模板
+  character: name | 角色名称, class | 职业, level | 等级, skills | 技能列表
+  story: main_quest | 当前主线任务, side_quests | 支线任务
+  social: friends | 好友列表, guild | 公会, reputation | 声望
+```
+
+Format rules:
+- First line: `template_name description` (name allows letters, numbers, `_`, `-`)
+- Following lines: `domain_name: field1 | description, field2 | description`
+- Fields separated by `,`, field name and description separated by `|`
+
+Or use JSON format:
+
+```
+/cogos templates create --json {"_meta":{"name":"my_template","description":"..."},...}
+```
+
+Delete a custom template:
+
+```
+/cogos templates delete my_template
+```
+
+<Note>
+Only custom templates can be deleted via the API or slash commands. Built-in and shared (user) templates are protected.
+</Note>
+
 ## Template Resolution
 
-Templates are loaded from `templates_dir` (default `./templates/`). User-defined templates override built-in ones with the same name.
+Templates are resolved by name across all three sources. The resolution order (highest priority first):
 
-The resolution order:
-1. User templates in `templates_dir`
-2. Built-in templates bundled with CogOS
+1. **Custom** templates in `custom_templates_dir` (`./templates/custom/`)
+2. **User** templates in `templates_dir` (`./templates/`)
+3. **Built-in** templates bundled with CogOS
+
+Use the API to view templates grouped by source:
+
+```bash
+curl http://localhost:8000/api/templates/grouped
+```

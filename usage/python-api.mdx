@@ -20,7 +20,7 @@ The recommended way to get started:
 ```python
 cogos = (
     CogOS(config)
-    .from_template("user_profile")
+    .from_template("general")
     .cm_prompt(default_cm_prompt)
     .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
 )
@@ -75,7 +75,7 @@ config.schema_update_rounds = 5  # update schema every 5 chat rounds
 
 cogos = (
     CogOS(config)
-    .from_template("user_profile")
+    .from_template("general")
     .cm_prompt(default_cm_prompt)
     .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
 )

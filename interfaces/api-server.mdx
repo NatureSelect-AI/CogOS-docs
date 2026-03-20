@@ -51,8 +51,11 @@ The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/templates` | List available templates |
-| `GET` | `/api/templates/{name}` | Get template details |
+| `GET` | `/api/templates` | List available templates with info |
+| `GET` | `/api/templates/grouped` | List templates grouped by source (builtin/user/custom) |
+| `GET` | `/api/templates/{name}` | Get full template data |
+| `POST` | `/api/templates/custom` | Save a custom template |
+| `DELETE` | `/api/templates/custom/{name}` | Delete a custom template |
 
 ### Sessions
 
@@ -124,6 +127,27 @@ curl -X POST http://localhost:8000/api/schemas/switch \
 curl -X POST http://localhost:8000/api/schemas/restore \
   -H "Content-Type: application/json" \
   -d '{"backup_id": "default_20260312_143000"}'
+```
+
+### Templates
+
+```bash
+# List all templates
+curl http://localhost:8000/api/templates
+
+# List templates grouped by source
+curl http://localhost:8000/api/templates/grouped
+
+# Get a specific template
+curl http://localhost:8000/api/templates/general
+
+# Save a custom template
+curl -X POST http://localhost:8000/api/templates/custom \
+  -H "Content-Type: application/json" \
+  -d @my_template.json
+
+# Delete a custom template
+curl -X DELETE http://localhost:8000/api/templates/custom/my_template
 ```
 
 ### Sessions

@@ -220,11 +220,61 @@ GET /api/schemas/backups?schema_id=default
 GET /api/templates
 ```
 
+Returns all available templates with info (name, description, source, domain count).
+
+### List Templates (Grouped)
+
+```bash
+GET /api/templates/grouped
+```
+
+Returns templates grouped by source: `builtin`, `user`, `custom`.
+
 ### Get Template Details
 
 ```bash
 GET /api/templates/{name}
 ```
+
+Returns the full template data (same format as schema JSON files).
+
+### Save Custom Template
+
+<ParamField body="template" type="object" required>
+  Full template JSON with `_meta.name` field.
+</ParamField>
+
+```bash
+POST /api/templates/custom
+```
+
+```json
+{
+  "_meta": {
+    "name": "my_template",
+    "description": "My custom template"
+  },
+  "my_domain": {
+    "data": {
+      "meta": {
+        "domain": {"value": "my_domain", "description": "Schema domain"}
+      },
+      "field1": {"value": "", "description": "First field"}
+    },
+    "_mutable": true
+  }
+}
+```
+
+Returns `{status, path, name}`.
+
+### Delete Custom Template
+
+```bash
+DELETE /api/templates/custom/{name}
+```
+
+Only custom templates can be deleted. Built-in and user templates are protected.
 
 ## Sessions
 

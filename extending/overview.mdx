@@ -10,7 +10,7 @@ CogOS is designed to be adapted. Here are all the extension points available:
 | Custom schema structure | Define your own paths in `UniversalSchemaDomain` |
 | Custom schema templates | Create `.json` files in `./templates/` directory |
 | Custom CM behavior | Write your own `system_prompt_builder(state, registry) -> str` |
-| Custom chatbot prompt | Pass any template with `{schema_data}` placeholder |
+| Custom chatbot prompt | Pass any template with `{recalled_data}` placeholder |
 | Custom tools | Extend `SCProtocol.tools()` with domain-specific operations |
 | Custom persistence | Replace `StateManager` / `SchemaFileManager` with your own backend |
 | Any LLM provider | Set `base_url` to any OpenAI-compatible endpoint |
@@ -51,13 +51,13 @@ cogos = CogOS(config).cm_prompt(my_cm_prompt).chatbot_prompt(my_template)
 
 ## Custom Chatbot Prompt
 
-The chatbot prompt template receives `{schema_data}` (recalled schema content) and any custom variables injected by plugins:
+The chatbot prompt template receives `{recalled_data}` (recalled schema content) and any custom variables injected by plugins:
 
 ```python
 my_template = """You are a helpful medical assistant.
 
 Patient records:
-{schema_data}
+{recalled_data}
 
 {rag_section}
 

@@ -30,7 +30,7 @@ The plugin automatically extracts and recalls structured memories each turn.
 - **Auto-extract** and **auto-recall** — extracts information into structured schemas and injects it into the system prompt each turn
 - **Schema-based memory** — organizes knowledge into typed domains and fields
 - **Multi-schema management** — create, switch, backup, and restore independent schema files
-- **Template system** — bootstrap schemas from built-in templates (`general`, `user_profile`, `roleplay`)
+- **Template system** — bootstrap schemas from built-in, shared, or custom templates; full template CRUD via slash commands
 - **Agent tools** — 5 registered tools for LLM-driven memory management
 - **Slash commands** — full `/cogos` command suite for manual memory management
 
@@ -69,23 +69,68 @@ Example `openclaw.json`:
 
 ## Slash Commands
 
+**View & Recall**
+
 | Command | Description |
 |---------|-------------|
 | `/cogos` or `/cogos status` | Show connection status and schema overview |
 | `/cogos inspect` | View schema structure with field values |
 | `/cogos recall` | Recall all stored memory data |
+
+**Memory Management**
+
+| Command | Description |
+|---------|-------------|
 | `/cogos forget <domain>` | Delete a specific schema domain |
 | `/cogos forget --all` | Clear all memory |
 | `/cogos reset` | Backup current schema and start fresh |
+
+**Schema Files**
+
+| Command | Description |
+|---------|-------------|
+| `/cogos schemas` | List all schema files and backups |
 | `/cogos new [name]` | Create a new schema and switch to it |
-| `/cogos new name --template=user_profile` | Create from a template |
+| `/cogos new name --template=<template>` | Create from a template |
 | `/cogos switch <schema_id>` | Switch to an existing schema |
 | `/cogos restore <backup_id>` | Restore a schema from backup |
-| `/cogos templates` | List available schema templates |
-| `/cogos schemas` | List all schema files and backups |
+
+**Template Management**
+
+| Command | Description |
+|---------|-------------|
+| `/cogos templates` | List all available templates (grouped by source) |
+| `/cogos templates show <name>` | Preview template domains and fields |
+| `/cogos templates use <name>` | Create a schema from template and switch to it |
+| `/cogos templates create` | Show format help for creating custom templates |
+| `/cogos templates create <definition>` | Create a custom template (compact text or `--json`) |
+| `/cogos templates delete <name>` | Delete a custom template |
+| `/cogos templates help` | Show template command help |
+
+**Configuration**
+
+| Command | Description |
+|---------|-------------|
 | `/cogos config` | View current runtime configuration |
 | `/cogos config buildEveryNTurns <N>` | Update extraction frequency |
 | `/cogos help` | Show help |
+
+### Creating Custom Templates via Slash Command
+
+Create templates directly from the chat using the compact text format:
+
+```
+/cogos templates create game_character 游戏角色记忆模板
+  character: name | 角色名称, class | 职业, level | 等级, skills | 技能列表
+  story: main_quest | 当前主线任务, side_quests | 支线任务
+  social: friends | 好友列表, guild | 公会, reputation | 声望
+```
+
+Format:
+- First line: `template_name description` (name allows letters, numbers, `_`, `-`)
+- Following lines: `domain_name: field1 | description, field2 | description`
+
+Or use JSON format: `/cogos templates create --json {"_meta":{"name":"..."},...}`
 
 ## Agent Tools
 

@@ -28,7 +28,7 @@ Process text into structured memory:
 cogos build --input conversation.md --session user1
 
 # Build with a preset template
-cogos build --template user_profile --text "I'm Bob" --session user1
+cogos build --template general --text "I'm Bob" --session user1
 
 # Build from stdin
 cat notes.md | cogos build --session user1
@@ -76,7 +76,7 @@ cogos serve
 cogos serve --host 0.0.0.0 --port 8000
 
 # With preset template
-cogos serve --port 8000 --template user_profile
+cogos serve --port 8000 --template general
 ```
 
 ## Summary
