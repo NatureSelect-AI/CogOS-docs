@@ -21,6 +21,7 @@ The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
 |--------|------|-------------|
 | `POST` | `/api/build` | Process text into memory |
 | `POST` | `/api/chat` | Chat with memory (returns `schema_updated` flag) |
+| `POST` | `/api/listen` | Listen mode: periodic build + every-turn recall |
 | `POST` | `/api/update-schema-from-chat` | Manually update schema from recent chat rounds |
 
 ### Configuration
@@ -39,8 +40,14 @@ The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
 | `GET` | `/api/schemas` | List schema domains |
 | `GET` | `/api/schemas/{name}` | Get schema details |
 | `GET` | `/api/schemas/file-data/{schema_id}` | Get full domain data from schema file |
+| `GET` | `/api/schemas/recall-all` | Get all schema data as formatted text (for LLM injection) |
+| `POST` | `/api/schemas/recall` | Selectively recall schema data relevant to a message |
+| `GET` | `/api/schemas/inspect-all` | Token-efficient schema overview |
 | `POST` | `/api/schemas` | Create a new schema domain |
-| `POST` | `/api/schemas/from-template` | Create schema from a template |
+| `DELETE` | `/api/schemas/{name}` | Delete a schema domain |
+| `DELETE` | `/api/schemas` | Delete all schema domains |
+| `POST` | `/api/schemas/from-template` | Copy template as a schema file and switch session to it |
+| `POST` | `/api/schemas/create-file` | Create a named schema file (with optional template) |
 | `POST` | `/api/schemas/new` | Backup current schema and start fresh |
 | `POST` | `/api/schemas/switch` | Switch session to a different schema |
 | `POST` | `/api/schemas/restore` | Restore a schema from backup |
@@ -64,6 +71,7 @@ The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
 | `GET` | `/api/sessions` | List sessions (includes `schema_id`) |
 | `POST` | `/api/sessions` | Create session (with optional `schema_id`) |
 | `DELETE` | `/api/sessions/{id}` | Delete a session |
+| `POST` | `/api/sessions/{id}/clear` | Clear session history (preserve schemas) |
 | `GET` | `/api/sessions/{id}/history` | Get session chat history |
 | `GET` | `/api/sessions/{id}/schema-id` | Get session's bound schema ID |
 | `PUT` | `/api/sessions/{id}/schema-id` | Bind session to a different schema |
@@ -84,6 +92,14 @@ curl -X POST http://localhost:8000/api/build \
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What are my hobbies?", "session_id": "alice"}'
+```
+
+### Listen (Periodic Build + Every-Turn Recall)
+
+```bash
+curl -X POST http://localhost:8000/api/listen \
+  -H "Content-Type: application/json" \
+  -d '{"message": "I just started learning piano.", "session_id": "alice"}'
 ```
 
 ### Update Schema from Chat

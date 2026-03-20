@@ -6,7 +6,7 @@ description: "Use preset templates or create custom ones to bootstrap schema str
 CogOS supports **two schema construction modes**:
 
 1. **LLM Auto-Generation** — The CM agent creates schema fields dynamically during `build()` (default)
-2. **Preset Templates** — Pre-defined field structures loaded from JSON files
+2. **From Template** — Select a preset template; CogOS copies it as a new schema file (`{name}_{YYYYMMDD}_{HHmmss}.json`) and subsequent chats dynamically update it via the CM agent
 
 ## Built-in Templates
 
@@ -101,13 +101,26 @@ The `_meta.name` field determines the template identifier. The file name can be 
     # Create a schema from template and switch to it
     /cogos templates use general
 
-    # Create a named schema from template
-    /cogos new my_schema --template=general
+    # Create a custom template
+    /cogos templates create my_template My description
+      domain1: field1 | desc1, field2 | desc2
+
+    # Delete a custom template
+    /cogos templates delete my_template
     ```
   </Tab>
 </Tabs>
 
+When you select a template (via CLI, API, or Web UI), CogOS **copies** the template into the schemas directory as a new schema file named `{template_name}_{YYYYMMDD}_{HHmmss}.json` and binds the current session to it. Subsequent conversations dynamically update this schema via the CM agent — the template simply provides the starting structure.
+
 ## Creating Custom Templates
+
+### Via Web UI
+
+1. Open the Build Schemas modal → switch to **From Template** mode
+2. Click **+ New Template** to open the template editor
+3. Fill in the template name, description, and fields
+4. Click **Save Template** — the file is saved to `./templates/custom/`
 
 ### Via File
 

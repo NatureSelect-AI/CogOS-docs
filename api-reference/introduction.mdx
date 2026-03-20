@@ -55,6 +55,28 @@ POST /api/chat
 
 Response includes a `schema_updated` flag indicating if auto-update was triggered this round.
 
+### Listen
+
+<ParamField body="message" type="string" required>
+  The user's message.
+</ParamField>
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+
+```bash
+POST /api/listen
+```
+
+```json
+{
+  "message": "I just started learning piano.",
+  "session_id": "alice"
+}
+```
+
+Listen mode: accumulates history, runs the CM agent in build mode periodically (every `buildEveryNTurns` turns), and recalls schema data every turn. Returns `reply`, `session_id`, and `turn_number`.
+
 ### Update Schema from Chat
 
 <ParamField body="session_id" type="string" required>
@@ -133,17 +155,115 @@ GET /api/schemas/{name}
 GET /api/schemas/file-data/{schema_id}
 ```
 
+Returns all domain data from a schema file — suitable for sidebar rendering.
+
+### Recall All Schemas
+
+```bash
+GET /api/schemas/recall-all
+GET /api/schemas/recall-all?schema_id=default
+```
+
+Returns all schema data as formatted text for LLM system prompt injection.
+
+### Selective Recall
+
+<ParamField body="message" type="string" required>
+  The user's message to determine relevant fields.
+</ParamField>
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+
+```bash
+POST /api/schemas/recall
+```
+
+```json
+{
+  "message": "What food do I like?",
+  "session_id": "alice"
+}
+```
+
+Runs the CM agent in QA mode to recall only fields relevant to the message. Returns `recalled`, `is_selective`, and `schema_id`.
+
+### Inspect All Schemas
+
+```bash
+GET /api/schemas/inspect-all
+GET /api/schemas/inspect-all?schema_id=default&show_values=true&max_depth=3
+```
+
+Returns a token-efficient overview of all schemas.
+
 ### Create Schema Domain
 
 ```bash
 POST /api/schemas
 ```
 
+### Delete Schema Domain
+
+```bash
+DELETE /api/schemas/{name}
+DELETE /api/schemas/{name}?schema_id=default
+```
+
+### Delete All Schema Domains
+
+```bash
+DELETE /api/schemas
+DELETE /api/schemas?schema_id=default
+```
+
 ### Create from Template
+
+<ParamField body="template_name" type="string" required>
+  The template name to use.
+</ParamField>
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
 
 ```bash
 POST /api/schemas/from-template
 ```
+
+```json
+{
+  "template_name": "general",
+  "session_id": "alice"
+}
+```
+
+Copies the template as a new schema file (`{name}_{YYYYMMDD}_{HHmmss}.json`) and switches the session to it.
+
+### Create Schema File
+
+<ParamField body="session_id" type="string" required>
+  The session identifier.
+</ParamField>
+<ParamField body="schema_id" type="string">
+  Custom schema ID. Auto-generated if empty.
+</ParamField>
+<ParamField body="template" type="string">
+  Optional template name to populate the new schema.
+</ParamField>
+
+```bash
+POST /api/schemas/create-file
+```
+
+```json
+{
+  "session_id": "alice",
+  "schema_id": "my_schema",
+  "template": "general"
+}
+```
+
+Creates a new named schema file and switches the session to it. Returns 409 if the schema already exists.
 
 ### New Schema (Backup + Reset)
 
@@ -302,6 +422,14 @@ POST /api/sessions?session_id=bob&schema_id=default
 ```bash
 DELETE /api/sessions/{id}
 ```
+
+### Clear Session
+
+```bash
+POST /api/sessions/{id}/clear
+```
+
+Clears the session's chat history while preserving schema data.
 
 ### Get Session History
 
