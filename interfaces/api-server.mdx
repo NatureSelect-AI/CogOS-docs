@@ -6,12 +6,23 @@ description: "REST API server powered by FastAPI for programmatic integration."
 Start the REST API server:
 
 ```bash
+# Foreground mode (default)
 cogos serve
-# or
 cogos serve --host 0.0.0.0 --port 8000
+
+# Background daemon mode (port from config or via flag)
+cogos serve start
+cogos serve --port 9000 start
+
+# Daemon + auto-start on boot
+cogos serve start --autostart
 ```
 
 The server also hosts the [Web UI](/interfaces/web-ui) at the root URL.
+
+<Tip>
+For production deployments, use `cogos serve start --autostart` to run as a background daemon with boot auto-start. See [Service management](/interfaces/service-management) for details.
+</Tip>
 
 ## Endpoints Overview
 

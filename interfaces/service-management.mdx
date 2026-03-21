@@ -1,0 +1,180 @@
+---
+title: "Service management"
+description: "Run CogOS as a background daemon with auto-start on boot."
+---
+
+CogOS can run as a long-lived background service. The `cogos serve` command supports subcommands for daemon lifecycle management, log viewing, and boot auto-start.
+
+<Warning>
+Only one CogOS daemon can run at a time. If a daemon is already running, `cogos serve start` will refuse to start a new one regardless of the port specified. Use `cogos serve stop` first, then start with a new port.
+</Warning>
+
+## Running modes
+
+<Tabs>
+  <Tab title="Foreground">
+    Run the server in the current terminal session. Stops when you press Ctrl+C or close the terminal.
+
+    ```bash
+    cogos serve --port 8000
+    ```
+  </Tab>
+  <Tab title="Background daemon">
+    Run the server as a detached background process. The process continues after you close the terminal.
+
+    ```bash
+    cogos serve start
+    cogos serve --port 9000 start
+    ```
+
+    Logs are written to `~/.cogos/cogos.log` and the PID is stored in `~/.cogos/cogos.pid`.
+  </Tab>
+  <Tab title="Daemon + auto-start">
+    Start the daemon and register a systemd service so CogOS auto-starts on boot.
+
+    ```bash
+    cogos serve start --autostart
+    cogos serve --port 9000 start --autostart
+    ```
+  </Tab>
+</Tabs>
+
+## Port configuration
+
+The server port can be specified in two ways (highest priority wins):
+
+1. **Command-line flag**: `cogos serve --port 9000 start`
+2. **Config file**: `server.port` in `configs/cogos.yaml`
+3. **Default**: `8000`
+
+```yaml
+# configs/cogos.yaml
+server:
+  host: "0.0.0.0"
+  port: 8000
+```
+
+The `--port` flag is defined on the `serve` group, so it works with all subcommands and foreground mode.
+
+## Daemon management
+
+### Start
+
+```bash
+cogos serve start
+cogos serve --port 9000 start
+cogos serve --port 8000 --template general start
+cogos serve start --autostart
+```
+
+Options `--host`, `--port`, and `--template` are defined on the parent `serve` command and apply to all subcommands. Pass `--autostart` to also enable boot auto-start via systemd.
+
+### Stop
+
+```bash
+cogos serve stop
+cogos serve stop --remove-autostart
+```
+
+Sends SIGTERM to the daemon and waits for graceful shutdown. Falls back to SIGKILL after 15 seconds if the process does not exit.
+
+Pass `--remove-autostart` to also disable the systemd auto-start service.
+
+### Restart
+
+```bash
+cogos serve restart
+cogos serve --port 9000 restart
+```
+
+Stops the running daemon (if any), then starts a new one.
+
+### Status
+
+```bash
+cogos serve status
+```
+
+Displays:
+- Running state and PID
+- Log file location
+- Uptime, memory usage, and CPU (when `psutil` is installed)
+- Whether auto-start is enabled
+
+<Note>
+Install `psutil` (`pip install psutil`) for uptime, memory, and CPU metrics in the status output.
+</Note>
+
+## Boot auto-start
+
+Use the `--autostart` flag on `start` to register a systemd user service:
+
+```bash
+cogos serve start --autostart
+```
+
+This:
+1. Starts the daemon immediately
+2. Generates a systemd unit file at `~/.config/systemd/user/cogos.service`
+3. Enables the service with `systemctl --user enable cogos`
+4. Runs `loginctl enable-linger` so the service survives user logout
+
+To remove auto-start later:
+
+```bash
+cogos serve stop --remove-autostart
+```
+
+<Warning>
+Auto-start requires a Linux system with systemd. It is not supported on macOS or Windows.
+</Warning>
+
+### Manual systemd control
+
+After enabling auto-start, you can also manage the service directly with systemctl:
+
+```bash
+systemctl --user start cogos
+systemctl --user stop cogos
+systemctl --user restart cogos
+systemctl --user status cogos
+journalctl --user -u cogos
+```
+
+## Log management
+
+View recent server output:
+
+```bash
+# Last 50 lines (default)
+cogos serve logs
+
+# Last 200 lines
+cogos serve logs -n 200
+
+# Follow in real time (like tail -f)
+cogos serve logs -f
+```
+
+Log file location: `~/.cogos/cogos.log`
+
+## File locations
+
+| File | Purpose |
+|------|---------|
+| `~/.cogos/cogos.pid` | PID of the running daemon process |
+| `~/.cogos/cogos.log` | Server stdout and stderr output |
+| `~/.config/systemd/user/cogos.service` | Systemd unit file (created by `--autostart`) |
+
+## Command reference
+
+| Command | Description |
+|---------|-------------|
+| `cogos serve` | Start in foreground (Ctrl+C to stop) |
+| `cogos serve start` | Start as background daemon |
+| `cogos serve start --autostart` | Start daemon + enable boot auto-start (systemd) |
+| `cogos serve stop` | Stop the daemon |
+| `cogos serve stop --remove-autostart` | Stop daemon + disable boot auto-start |
+| `cogos serve restart` | Restart the daemon |
+| `cogos serve status` | Show status, PID, uptime, memory, auto-start state |
+| `cogos serve logs` | View logs (`-f` follow, `-n` line count) |

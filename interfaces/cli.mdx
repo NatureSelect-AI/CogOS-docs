@@ -46,7 +46,7 @@ cogos chat --message "What do I like?" --session user1
 cogos chat --session user1
 ```
 
-### Interactive Chat Commands
+### Interactive chat commands
 
 When in interactive chat mode (`cogos chat`):
 
@@ -66,7 +66,7 @@ cogos schemas
 
 ## Serve
 
-Start the API server:
+Start the API server in the foreground:
 
 ```bash
 # Default settings
@@ -79,6 +79,53 @@ cogos serve --host 0.0.0.0 --port 8000
 cogos serve --port 8000 --template general
 ```
 
+When invoked without a subcommand, `cogos serve` runs the server in the foreground (Ctrl+C to stop). For background service management, see the subcommands below.
+
+### Service management subcommands
+
+Only one CogOS daemon can run at a time. If a daemon is already running, `start` will refuse to launch a new one regardless of the port specified. Use `stop` first, then start with a new port.
+
+Port can be set via the `--port` flag (highest priority) or in `configs/cogos.yaml` under `server.port` (default: `8000`).
+
+| Command | Description |
+|---------|-------------|
+| `cogos serve start` | Start as a background daemon |
+| `cogos serve start --autostart` | Start daemon + enable auto-start on boot (systemd) |
+| `cogos serve stop` | Stop the daemon |
+| `cogos serve stop --remove-autostart` | Stop daemon + disable auto-start on boot |
+| `cogos serve restart` | Restart the daemon |
+| `cogos serve status` | Show running status, PID, uptime, memory |
+| `cogos serve logs` | View server logs |
+
+```bash
+# Start as a background daemon (port from config, default 8000)
+cogos serve start
+
+# Specify port via flag (overrides config)
+cogos serve --port 9000 start
+
+# Start daemon + enable auto-start on boot
+cogos serve start --autostart
+
+# Check status
+cogos serve status
+
+# Stop the daemon
+cogos serve stop
+
+# Stop + disable auto-start
+cogos serve stop --remove-autostart
+
+# Restart with a different port
+cogos serve --port 9000 restart
+
+# View logs
+cogos serve logs -n 100       # last 100 lines
+cogos serve logs -f           # follow in real time
+```
+
+See [Service management](/interfaces/service-management) for details on daemon mode, auto-start, and log management.
+
 ## Summary
 
 | Command | Description |
@@ -87,4 +134,8 @@ cogos serve --port 8000 --template general
 | `cogos build` | Process text into memory |
 | `cogos chat` | Chat with memory |
 | `cogos schemas` | Inspect schemas |
-| `cogos serve` | Start API server + Web UI |
+| `cogos serve` | Start API server + Web UI (foreground) |
+| `cogos serve start` | Start as background daemon |
+| `cogos serve start --autostart` | Start daemon + enable boot auto-start |
+| `cogos serve stop` | Stop background daemon |
+| `cogos serve status` | Show daemon status |

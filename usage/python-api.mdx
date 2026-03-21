@@ -61,8 +61,51 @@ asyncio.run(cogos.build("""
 Generate responses grounded in schema data:
 
 ```python
-reply = asyncio.run(cogos.chat("What food do I like?", session_id="bob"))
-print(reply)  # "You mentioned that you love sushi!"
+result = asyncio.run(cogos.chat("What food do I like?", session_id="bob"))
+print(result["reply"])  # "You mentioned that you love sushi!"
+```
+
+`chat()` returns a dict with the following keys:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `reply` | `str` | The chatbot response |
+| `schema_updated` | `bool` | Whether schema auto-update was triggered this round |
+| `context_rounds` | `int` | Number of chat rounds included as context |
+| `total_rounds` | `int` | Total chat rounds in this session |
+| `memory_injected` | `bool` | Whether schema memory was injected (context window exceeded) |
+| `request_data` | `dict` | The system prompt and messages sent to the LLM |
+
+## Listen Mode
+
+`listen()` provides automatic periodic memory extraction — it accumulates chat history, runs the CM agent in build mode every N turns, and recalls schema data every turn:
+
+```python
+config = CogOSConfig.from_file()
+config.build_every_n_turns = 3  # run build CM every 3 turns
+
+cogos = (
+    CogOS(config)
+    .from_template("general")
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+)
+
+# listen() returns the chatbot reply string directly
+reply = asyncio.run(cogos.listen("I'm Bob, I love hiking.", session_id="bob"))
+print(reply)
+```
+
+Unlike `chat()`, `listen()` returns a plain string (not a dict). Build triggers when `turn_number % build_every_n_turns == 0`.
+
+## Selective Recall
+
+`recall()` runs the CM agent in QA mode to retrieve only the schema fields relevant to a message:
+
+```python
+result = asyncio.run(cogos.recall("What food do I like?", session_id="bob"))
+print(result["recalled"])       # Formatted schema excerpt
+print(result["is_selective"])   # True if the CM agent found relevant data
 ```
 
 ## Dynamic Schema Update
@@ -85,9 +128,26 @@ result = asyncio.run(cogos.chat("I just got promoted to Senior Engineer!", sessi
 print(result["reply"])            # The chatbot response
 print(result["schema_updated"])   # True if schema was auto-updated this round
 
-# Manual trigger
+# Manual trigger: update schema from last 10 rounds of chat
 asyncio.run(cogos.update_schema_from_chat(session_id="bob", rounds=10))
 ```
+
+## Plugins & Custom Tools
+
+Register plugins via `.use()` and custom SCP tools via `.tools()`:
+
+```python
+cogos = (
+    CogOS(config)
+    .from_template("general")
+    .cm_prompt(default_cm_prompt)
+    .chatbot_prompt(DEFAULT_CHATBOT_PROMPT)
+    .use(MyRAGPlugin("http://localhost:9000"))   # add plugin hooks
+    .tools(my_custom_tools_builder)              # add custom SCP tools
+)
+```
+
+See [Plugins](/extending/plugins) for the full plugin protocol.
 
 ## Config Loading
 
@@ -99,7 +159,7 @@ from cogos import CogOSConfig
 config = CogOSConfig.from_file()                      # auto-resolve + env vars
 config = CogOSConfig.from_file("configs/cogos.yaml")   # explicit path
 config = CogOSConfig.from_env()                        # env vars only
-config = CogOSConfig(model="gpt-4o")                   # direct construction
+config = CogOSConfig(model="gpt-5.4")                  # direct construction
 ```
 
 ## Custom CM Prompt

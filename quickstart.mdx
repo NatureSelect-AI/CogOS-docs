@@ -87,6 +87,10 @@ python examples/02_chat_with_memory.py
 # Or start the web server
 cogos serve
 # Open http://localhost:8000
+
+# Or run as a background daemon
+cogos serve start
+cogos serve status
 ```
 
 ## Next Steps
@@ -97,6 +101,9 @@ cogos serve
   </Card>
   <Card title="CLI Reference" icon="terminal" href="/interfaces/cli">
     Explore the full command-line interface.
+  </Card>
+  <Card title="Service Management" icon="server" href="/interfaces/service-management">
+    Run CogOS as a daemon with auto-start on boot.
   </Card>
   <Card title="Schema Templates" icon="file-code" href="/usage/schema-templates">
     Use preset templates or create your own.

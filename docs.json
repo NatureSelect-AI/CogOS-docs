@@ -51,6 +51,7 @@
             "pages": [
               "interfaces/cli",
               "interfaces/api-server",
+              "interfaces/service-management",
               "interfaces/web-ui"
             ]
           },
